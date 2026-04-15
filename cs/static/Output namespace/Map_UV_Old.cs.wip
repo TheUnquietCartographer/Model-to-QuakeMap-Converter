@@ -1,0 +1,107 @@
+using System;
+using Maff;
+
+namespace Output {
+
+	//quake1 "0 0 0 1 1" //Xoffset Yoffset rotation Xscale Yscale
+	//valve220 "[ 0 -1 0 -0 ] [ 0 0 -1 -0 ] -0 1 1" //[ Tx1 Ty1 Tz1 Toffset1 ] [ Tx2 Ty2 Tz2 Toffset2 ] rotation Xscale Yscale
+
+	//This is a refactoring of my old code from a previous project.
+
+	internal static class Map_UV_Old {
+
+		public static string TranslateUVToMap (UniversalMesh _mesh, int faceIndex, Map.Format _format, bool bakeAxes = false) {
+
+		//TRANSFORM FACE VERTICES INTO 2D SPACE
+			//Facing       Cross        Right vector	//Facing       Cross        Down vector
+			//(-1, 0, 0) X (0, 0, -1) = (0, -1, 0)		//(-1, 0, 0) X (0, 1, 0)  = (0, 0, -1)
+			//(1, 0, 0)  X (0, 0, -1) = (0, 1, 0)		//(1, 0, 0)  X (0, -1, 0) = (0, 0, -1)
+			//(0, -1, 0) X (0, 0, -1) = (1, 0, 0)		//(0, -1, 0) X (-1, 0, 0) = (0, 0, -1)
+			//(0, 1, 0)  X (0, 0, -1) = (-1, 0, 0)		//(0, 1, 0)  X (1, 0, 0)  = (0, 0, -1)
+			//(0, 0, -1) X (0, -1, 0) = (-1, 0, 0)		//(0, 0, -1) X (-1, 0, 0) = (0, 1, 0)
+			//(0, 0, 1)  X (0, -1, 0) = (1, 0, 0)		//(0, 0, 1)  X (-1, 0, 0) = (0, -1, 0)
+			Vector3 _faceNormal = _mesh.GetTrueFaceNormal(faceIndex);
+			Vector3 textureAxis_right, textureAxis_down;
+		//Get texture axes
+			{
+				Vector3 dominantFacing = faceNormal.Sign(1);
+				//If the face is on an angle of 45 degrees the priority goes z -> y -> x.
+				//Alternatively once you have the first axis do Cross(firstAxis, faceNormal) in that order to get the second axis (actually perpendicular as well).
+				if (dominantFacing.z != 0) {
+					Vector3 pn_xz = new Vector3(faceNormal.x, 0, faceNormal.z).normalized;
+					Vector3 pn_yz = new Vector3(0, faceNormal.y, faceNormal.z).normalized;
+					if (dominantFacing.z == 1) {
+						textureAxis_right = Vector3.Cross(pn_xz, Vector3.forward);
+						textureAxis_down = Vector3.Cross(pn_yz, Vector3.left);
+					}
+					else {
+						textureAxis_right = Vector3.Cross(pn_xz, Vector3.back);
+						textureAxis_down = Vector3.Cross(pn_yz, Vector3.left);
+					}
+				}
+				else if (dominantFacing.y != 0) {
+					Vector3 pn_xy = new Vector3(faceNormal.x, faceNormal.y, 0).normalized;
+					textureAxis_right = Vector3.Cross(pn_xy, Vector3.up);
+					Vector3 pn_yz = new Vector3(0, faceNormal.y, faceNormal.z).normalized;
+					if (dominantFacing.y == -1) textureAxis_down = Vector3.Cross(pn_yz, Vector3.left);
+					else textureAxis_down = Vector3.Cross(pn_yz, Vector3.right);
+				}
+				else if (dominantFacing.x != 0) {
+					Vector3 pn_xy = new Vector3(faceNormal.x, faceNormal.y, 0).normalized;
+					textureAxis_right = Vector3.Cross(pn_xy, Vector3.up);
+					Vector3 pn_xz = new Vector3(faceNormal.x, 0, faceNormal.z).normalized;
+					if (dominantFacing.x == -1) textureAxis_down = Vector3.Cross(pn_xz, Vector3.forward);
+					else textureAxis_down = Vector3.Cross(pn_xz, Vector3.back);
+				}
+
+				else {
+					textureAxis_right = zero3;
+					textureAxis_down = zero3;
+				}
+			}
+
+
+		//ANOTHER NOTE:
+		//Surely we can use these texture axes ^^^ along with the old axial projection method, right.
+		//So waht we do is we project the texture onto the face.
+		//Then depending on the angle of the face, we can just scale the texture accordingly.
+
+
+		//OLD
+			Vector2[] _vertices_2D = new Vector2[_face.vertexCount];
+			{
+				Vector3 toNext_3D = Vector3.Vector(_mesh.vertices[0], _mesh.vertices[1]);
+				double angleInRadians = Vector3.SignedAngle_L(faceNormal, textureAxis_right, to3D);
+				Vector2 toNext_2D = Vector2.right.Rotated_L(angleInRadians).Scaled(toNext_3D.magnitude);            //<== To get the angle we measure from upAxis; here we transform from the Vector2 up axis.
+				vertices2D[1] = toNext_2D;
+				for (int i = 1; i < _face.vertexCount; i++) {
+					int h = i-1;
+					int j = i+1;
+					if (j == _face.vertexCount) j = 0;
+					Vector3 toPrev_3D = Vector3.Vector(_vertices[i], _vertices[h]);
+					Vector3 toNext_3D = Vector3.Vector(_vertices[i], _vertices[j]);
+					angleInRadians = Vector3.SignedAngle_L(faceNormal, from3D, to3D);
+					Vector2 toPrev_2D = Vector2.Vector(vertices2D[i], vertices2D[h]);
+					Vector2 toNext_2D = toPrev_2D.normalized.Rotated_L(angleInRadians).Scaled(toNext_3D.magnitude);
+					vertices2D[j] = vertices2D[i].Added(toNext_2D);
+				}
+			}
+		
+		//NEW (suggested by AI so fuck knows if it works, better do some test cases)
+			Vector2[] _vertices_2D = new Vector2[_face.vertexCount];
+			{
+				Vector3 origin = _mesh.vertices[_face.vertexIndices[0]];
+				for (int i = 0; i < _vertices_2D.Length; i++) {
+					Vector3 originToVertex = origin.VectorTo(_mesh.vertices[_face.vertexIndices[i]]);
+					_vertices_2D[i] = new Vector2(
+						Vector3.Dot(originToVertex, arbitraryTextureAxis_right),
+						Vector3.Dot(originToVertex, arbitraryTextureAxis_down)
+					);
+				}
+			}
+
+		}
+
+	}
+
+}
