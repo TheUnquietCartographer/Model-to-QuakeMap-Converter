@@ -5,7 +5,7 @@ namespace Output {
 	
 	internal static class Map_UV_Comprehensive {
 
-		public static string TranslateUVToMap (UniversalMesh _mesh, int faceIndex, Map.Format _format, bool bakeAxes = false) {
+		public static string TranslateUVToMap (UniversalMesh _mesh, UniversalMesh.Face _face, int dbg_faceIndex, Map.Format _format, bool bakeAxes = false) {
 
 		//TRANSFORM FACE VERTICES INTO 2D SPACE
 			//Facing       Cross        Right vector	//Facing       Cross        Down vector
@@ -16,8 +16,7 @@ namespace Output {
 			//(0, 0, -1) X (0, -1, 0) = (-1, 0, 0)		//(0, 0, -1) X (-1, 0, 0) = (0, 1, 0)
 			//(0, 0, 1)  X (0, -1, 0) = (1, 0, 0)		//(0, 0, 1)  X (-1, 0, 0) = (0, -1, 0)
 
-			UniversalMesh.Face _face = _mesh.faces[faceIndex];
-			Vector3 _faceNormal = _mesh.GetTrueFaceNormal(faceIndex); //Returns a normalized vector. 
+			Vector3 _faceNormal = _mesh.GetTrueFaceNormal(_face); //Returns a normalized vector. 
 			Vector3 dominantFacing = _faceNormal.Signed(1);
 			Vector3 arbitraryTextureAxis_right, arbitraryTextureAxis_down;
 
@@ -55,55 +54,57 @@ namespace Output {
 				}
 			}
 
-			//I believe this to be correct ^^^
-
-
-
-
-
-
-
-
-		//Pick an origin from which to base further calculations
-			Vector2 v_origin = _vertices_2D[0];
-			Vector2 uv_origin = _mesh.textureVertices[_face.textureVertexIndices[0]];
-
-		// Build system using two edges
-			Vector2 dv1 = Vector2.Vector(v_origin, _vertices_2D[1]);
-			Vector2 dv2 = Vector2.Vector(v_origin, _vertices_2D[2]);
-			Vector2 duv1 = Vector2.Vector(uv_origin, _mesh.textureVertices[_face.textureVertexIndices[1]]);
-			Vector2 duv2 = Vector2.Vector(uv_origin, _mesh.textureVertices[_face.textureVertexIndices[2]]);
-
-
-
-
-		//Something something relying on triangles when we are getting the settings for the whole face.
-		// We already know that triangles might be degen, so we need to be able to get one that isn't.
-		//Should we pass in the triangle array gotten with Face.GetTriangles()?
-
-
-		// Solve linear system for matrix [A B; C D]
-			double determinant = dv1.x * dv2.y - dv1.y * dv2.x;	//Signed area of the parallelogram formed by dv1 and dv2
-			if (Math.Abs(determinant) < 1e-8d) {
-				Console.WriteLine($"{faceIndex}: Degenerate triangle");
-				return Map.DefaultTextureSettings(_format, _faceNormal);
+		//
+		// * v_i and uv_i are the origin vertex/texture vertex respectively
+			int i_ = -1, j_ = -1, k_ = -1;
+			Vector2 v_i = Vector2.zero, v_ij = Vector2.zero, v_ik = Vector2.zero;
+			double determinant = 0;
+			void LogError_ZeroVector(int index1, int index2) {
+				Log.Single($"{dbg_faceIndex}: Vertices {index1} {_vertices_2D[index1]} & {index2} {_vertices_2D[index2]} produce a zero vector.", ConsoleColor.Red);
 			}
-
+			for (i_ = 0; i_ < _vertices_2D.Length; i_++) {
+				/*Vector2*/ v_i = _vertices_2D[i_];
+				for (j_ = i_+1; j_ < _vertices_2D.Length; j_++) {
+					Vector2 v_j = _vertices_2D[j_];
+					/*Vector2*/ v_ij = Vector2.Vector(v_i, v_j);
+					if (v_ij == Vector2.zero) {LogError_ZeroVector(i_, j_); continue;}
+					for (k_ = j_+1; k_ < _vertices_2D.Length; k_++) {
+						Vector2 v_k = _vertices_2D[k_];
+						/*Vector2*/ v_ik = Vector2.Vector(v_i, v_k);
+						if (v_ik == Vector2.zero) {LogError_ZeroVector(i_, k_); continue;}
+						Vector2 v_jk = Vector2.Vector(v_j, v_k);
+						if (v_jk == Vector2.zero) {LogError_ZeroVector(j_, k_); continue;}
+						determinant = Vector2.Determinant(v_ij, v_ik);
+						if (Math.Abs(determinant) < 1e-6d) {
+							Log.Single($"{dbg_faceIndex}: Degenerate triangle for vertices {i_} {j_} {k_} {v_i} {v_j} {v_k}", ConsoleColor.Red);
+							continue;
+						}
+						goto NEXT;
+					}
+				}
+			}
+			NEXT:
+			Vector2 uv_i = _mesh.textureVertices[_face.textureVertexIndices[i_]];
+			Vector2 uv_ij = Vector2.Vector(uv_i, _mesh.textureVertices[_face.textureVertexIndices[j_]]);
+			Vector2 uv_ik = Vector2.Vector(uv_i, _mesh.textureVertices[_face.textureVertexIndices[k_]]);
 
 
 
 			double inverseDeterminant = 1d / determinant;
 
 		// Solve using inverse
-			double A = ( duv1.x * dv2.y - duv2.x * dv1.y) * inverseDeterminant;
-			double B = (-duv1.x * dv2.x + duv2.x * dv1.x) * inverseDeterminant;
-			double C = ( duv1.y * dv2.y - duv2.y * dv1.y) * inverseDeterminant;
-			double D = (-duv1.y * dv2.x + duv2.y * dv1.x) * inverseDeterminant;
+			double A = ( uv_ij.x * v_ik.y - uv_ik.x * v_ij.y) * inverseDeterminant;
+			double B = (-uv_ij.x * v_ik.x + uv_ik.x * v_ij.x) * inverseDeterminant;
+			double C = ( uv_ij.y * v_ik.y - uv_ik.y * v_ij.y) * inverseDeterminant;
+			double D = (-uv_ij.y * v_ik.x + uv_ik.y * v_ij.x) * inverseDeterminant;
 
 		// Shift
-			double uShift = uv_origin.x - (A * v_origin.x + B * v_origin.y);
-			double vShift = uv_origin.y - (C * v_origin.x + D * v_origin.y);
+			double uShift = uv_i.x - (A * v_i.x + B * v_i.y);
+			double vShift = uv_i.y - (C * v_i.x + D * v_i.y);
 			double scaleX, scaleY, rotation;
+
+
+bakeAxes = true;	//Temp settings for testing
 
 		//BRANCH 1 //Is this for original quake 1 format????
 			switch (_format) {
@@ -120,16 +121,13 @@ namespace Output {
 					Vector3 uAxis = arbitraryTextureAxis_right.Scaled(A).Added(arbitraryTextureAxis_down.Scaled(B));
 					Vector3 vAxis = arbitraryTextureAxis_right.Scaled(C).Added(arbitraryTextureAxis_down.Scaled(D));
 						if (uAxis.isNaN) {
-							Console.WriteLine($"{faceIndex}: UAxis has NaN components.");
+							Console.WriteLine($"{dbg_faceIndex}: UAxis has NaN components.");
 							return Map.DefaultTextureSettings(_format, _faceNormal);
 						}
 						if (vAxis.isNaN) {
-							Console.WriteLine($"{faceIndex}: VAxis has NaN components.");
+							Console.WriteLine($"{dbg_faceIndex}: VAxis has NaN components.");
 							return Map.DefaultTextureSettings(_format, _faceNormal);
 						}
-
-bakeAxes = true;
-
 					if (bakeAxes) {
 						scaleX = 1;
 						scaleY = 1;
@@ -140,11 +138,11 @@ bakeAxes = true;
 						uAxis.Normalize();
 						vAxis.Normalize();
 						if (uAxis.isNaN) {
-							Console.WriteLine($"{faceIndex}: UAxis has NaN components.");
+							Log.Single($"{dbg_faceIndex}: UAxis has NaN components.", ConsoleColor.Red);
 							return Map.DefaultTextureSettings(_format, _faceNormal);
 						}
 						if (vAxis.isNaN) {
-							Console.WriteLine($"{faceIndex}: VAxis has NaN components.");
+							Log.Single($"{dbg_faceIndex}: VAxis has NaN components.", ConsoleColor.Red);
 							return Map.DefaultTextureSettings(_format, _faceNormal);
 						}
 					}

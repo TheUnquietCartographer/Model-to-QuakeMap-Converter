@@ -26,3 +26,4 @@
 /home/Matt/My Projects/Model-to-QuakeMap-Converter/obj/Debug/net10.0/a.pdb
 /home/Matt/My Projects/Model-to-QuakeMap-Converter/obj/Debug/net10.0/a.genruntimeconfig.cache
 /home/Matt/My Projects/Model-to-QuakeMap-Converter/obj/Debug/net10.0/ref/a.dll
+/home/Matt/My Projects/Model-to-QuakeMap-Converter/obj/Debug/net10.0/a.sourcelink.json

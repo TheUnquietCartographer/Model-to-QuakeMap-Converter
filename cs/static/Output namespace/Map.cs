@@ -29,8 +29,8 @@ namespace Output {
 			UniversalMesh scaledMesh = _mesh.Scaled(scaleFactor, rounding, swapYZCoordinates);	
 
 		//LOCAL FUNCTIONS & DELEGATES
-			Vector3 GetFaceNormal(int faceIndex) {
-				Vector3 normal_ = scaledMesh.GetTrueFaceNormal(faceIndex);
+			Vector3 GetFaceNormal(UniversalMesh.Face _face) {
+				Vector3 normal_ = scaledMesh.GetTrueFaceNormal(_face);
 				normal_.Round(1);
 				if (invertFaceNormals) normal_.Invert();
 				normal_.Scale(brushThickness);
@@ -77,7 +77,7 @@ namespace Output {
 					UniversalMesh.Face _face = scaledMesh.faces[i];
 					string texturePath = GetTexturePath(_face);
 				//Get triangles
-					UniversalMesh.Face[] triangles = scaledMesh.GetTriangles(i);
+					UniversalMesh.Face[] triangles = scaledMesh.GetTriangles(_face);
 					//int FIRST_THISFACE = DEBUGCOUNTER;
 				//Iterate triangles
 					for (int j = 0; j < triangles.Length; j++) {
@@ -107,9 +107,9 @@ namespace Output {
 					//Get remaining useful data
 						Vector3 triangleNormal = scaledMesh.GetTriangleNormal(triangles[j]).Scaled(brushThickness);
 
-						string textureSettings = DefaultTextureSettings(format, triangleNormal);
+						//string textureSettings = DefaultTextureSettings(format, triangleNormal);
+						string textureSettings = Map_UV_Comprehensive.TranslateUVToMap(scaledMesh, triangles[j], i, format);
 
-					//	string textureSettings = Map_UV_Comprehensive.TranslateUVToMap(scaledMesh, i, format);
 					//Create backface vertices
 						brushVertices[3] = brushVertices[0].Added(triangleNormal);
 						brushVertices[4] = brushVertices[1].Added(triangleNormal);
@@ -143,9 +143,9 @@ namespace Output {
 				for (int i = 0; i < scaledMesh.faces.Length; i++) {
 				//Get useful data
 					UniversalMesh.Face _face = scaledMesh.faces[i];
-					Vector3 faceNormal = GetFaceNormal(i);
+					Vector3 faceNormal = GetFaceNormal(_face);
 					string texturePath = GetTexturePath(_face);
-					//string textureSettings = Map_UV_1.TranslateUVToMap(scaledMesh, i, format);
+					//string textureSettings = Map_UV_1.TranslateUVToMap(scaledMesh, _face, i, format);
 					string textureSettings = DefaultTextureSettings(format, faceNormal);
 				//Get brush vertices
 					Vector3[] brushVertices = new Vector3[_face.vertexCount * 2];

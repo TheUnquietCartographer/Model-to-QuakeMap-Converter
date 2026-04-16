@@ -148,6 +148,11 @@ using System;
         	);
     	}
 */
+	//Determinant
+		public static double Determinant (Vector2 v1, Vector2 v2) {
+			return v1.x * v2.y - v1.y * v2.x;
+		} 
+
 	//Dot product
 		public static double Dot (Vector2 v1, Vector2 v2) {
 			return (v1.x * v2.x) + (v1.y * v2.y);

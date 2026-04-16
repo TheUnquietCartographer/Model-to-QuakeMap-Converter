@@ -283,7 +283,6 @@ using DoubleExtensions;
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
-		//Getting a face by its index ensures that it belongs to this mesh.
 		public struct Edge {
 			public int vertIndex;
 			public Vector3 vector;
@@ -293,8 +292,7 @@ using DoubleExtensions;
 			}
 			public override string ToString () {return $"{this.vertIndex}: {this.vector.ToString()}";}
 		}
-		public List<Edge> GetEdges (int faceIndex) {
-			Face _face = this.faces[faceIndex];
+		public List<Edge> GetEdges (Face _face) {
 			List<Edge> edges = new List<Edge>(_face.vertexCount);
 			int countMinusOne = _face.vertexCount - 1;
 			for (int i = 0; i < countMinusOne; i++) {
@@ -310,10 +308,9 @@ using DoubleExtensions;
 			return edges;
 		}
 	
-		public Face[] GetTriangles (int faceIndex) {
-			Face _face = this.faces[faceIndex];
+		public Face[] GetTriangles (Face _face) {
 		//STORE EDGES
-			List<Edge> edges = this.GetEdges(faceIndex);
+			List<Edge> edges = this.GetEdges(_face);
 		//TRIANGLIFY
 			List<Face> triangles = new List<Face>(_face.triangleCount);
 			int i = 0;
@@ -364,25 +361,16 @@ using DoubleExtensions;
 
 		//Vertex normals do not necessarily have any relation to the normal vector of the face, i.e. the one that is perpendicular to the plane.
 		//As such, it is much safer to calculate the face normal from the cross product of two of its edges (or all of them, in this case).
-		public Vector3 GetTrueFaceNormal (int faceIndex) {
-			Face _face = this.faces[faceIndex];
-			List<Vector3> sides = new List<Vector3>(_face.vertexCount) {
-				Vector3.Vector(this.vertices[_face.vertexIndices[0]], this.vertices[_face.vertexIndices[1]])
-			};
+		public Vector3 GetTrueFaceNormal (Face _face) {
+			Vector3 prevSide, thisSide;
 			Vector3 normal = new Vector3(0,0,0);
-			for (int j = 1; j < _face.vertexCount; j++) {
-				int k = j+1;
-				if (k == _face.vertexCount) k = 0;
-			//Add another side.
-				sides.Add(Vector3.Vector(this.vertices[_face.vertexIndices[j]], this.vertices[_face.vertexIndices[k]]));
-				int i = j-1;
-			//Check whether this side and the previous one encapsulate a convex part of the mesh (if not the normal for this triangle will be pointing in the opposite direction).
-				Vector3 cross = Vector3.Cross(sides[i], sides[j]);
-				Vector3 perpendicular = Vector3.Cross(cross, sides[i]);
-				double dot = Vector3.Dot(perpendicular, sides[j]);
-			//Angle is acute, these edges form a valid triangle
-				if (dot > 0) normal.Add(cross);
-				//The cross is the normal in this case.
+			prevSide = Vector3.Vector(this.vertices[_face.vertexIndices[0]], this.vertices[_face.vertexIndices[1]]);
+			for (int i = 1; i < _face.vertexCount; i++) {
+				int j = i+1;
+				if (j == _face.vertexCount) j = 0;
+				thisSide = Vector3.Vector(this.vertices[_face.vertexIndices[i]], this.vertices[_face.vertexIndices[j]]);
+				normal.Add(Vector3.Cross(prevSide, thisSide));
+				prevSide = thisSide;
 			}
 			normal.Normalize();
 			return normal;
