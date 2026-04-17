@@ -254,9 +254,9 @@ using DoubleExtensions;
 			string
 				str_vertices = "VERTICES:\r\n",
 				str_vertexNormals = "VERTEX NORMALS:\r\n",
-				str_textureVertices = "TEXTURE VERTICES\r\n",
+				str_textureVertices = "TEXTURE VERTICES:\r\n",
 				str_materials = "MATERIALS:\r\n",
-				str_faces = "FACES\r\n"
+				str_faces = "FACES:\r\n"
 			;
 			for (int i = 0; i < this.vertices.Length; i++) {
 				str_vertices += $"{i}: {this.vertices[i]}\r\n";
