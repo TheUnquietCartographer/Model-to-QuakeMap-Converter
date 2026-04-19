@@ -1,5 +1,6 @@
 using System;
 using Maff;
+using DoubleExtensions;
 using System.Linq;
 
 namespace Output {
@@ -89,14 +90,6 @@ namespace Output {
 			Vector2 uv_ij = Vector2.Vector(uv_i, _mesh.textureVertices[_face.textureVertexIndices[j_]]);
 			Vector2 uv_ik = Vector2.Vector(uv_i, _mesh.textureVertices[_face.textureVertexIndices[k_]]);
 
-ComprehensiveLog.Add(
-	$"\tForming a triangle with vertices: I = {_face.vertexIndices[i_]}; J = {_face.vertexIndices[j_]}; K = {_face.vertexIndices[k_]}",
-	$"\t\tFace normal: {_faceNormal}; Texture basis axis (right) {arbitraryTextureAxis_right}; Texture basis axis (down): {arbitraryTextureAxis_down}",
-	$"\t\t2D vertices: I (origin): {_vertices_2D[i_]}; J: {_vertices_2D[j_]}; K: {_vertices_2D[k_]}",
-	$"\t\tGeometric edges: V_IJ: {v_ij}; V_IK: {v_ik}",
-	$"\t\tTexture edges: UV_IJ: {uv_ij}; UV_IK: {uv_ik}",
-	$"\t\tDeterminant = V_IJ.x * V_IK.y - V_IJ.y * V_IK. x = {v_ij.x} * {v_ik.y} - {v_ij.y} * {v_ik.x} = {determinant}\r\n"
-);
 		// Solve using inverse
 			double inverseDeterminant = 1d / determinant;
 			double A = ( uv_ij.x * v_ik.y - uv_ik.x * v_ij.y) * inverseDeterminant;
@@ -104,21 +97,12 @@ ComprehensiveLog.Add(
 			double C = ( uv_ij.y * v_ik.y - uv_ik.y * v_ij.y) * inverseDeterminant;
 			double D = (-uv_ij.y * v_ik.x + uv_ik.y * v_ij.x) * inverseDeterminant;
 
-ComprehensiveLog.Add(
-	$"\t\tInverse determinant = 1 / determinant = {inverseDeterminant}",
-	$"\t\tComponent A = ( UV_IJ.x * V_IK.y - UV_IK.x * V_IJ.y) * inverseDeterminant = ({uv_ij.x} * {v_ik.y} - {uv_ik.x} * {v_ij.y}) * {inverseDeterminant} = {A}",
-	$"\t\tComponent B = (-UV_IJ.x * V_IK.x + UV_IK.x * V_IJ.x) * inverseDeterminant = ({-uv_ij.x} * {v_ik.x} + {uv_ik.x} * {v_ij.x}) * {inverseDeterminant} = {B}",
-	$"\t\tComponent C = ( UV_IJ.y * V_IK.y - UV_IK.y * V_IJ.y) * inverseDeterminant = ({uv_ij.y} * {v_ik.y} - {uv_ik.y} * {v_ij.y}) * {inverseDeterminant} = {C}",
-	$"\t\tComponent D = (-UV_IJ.y * V_IK.x - UV_IK.y * V_IJ.x) * inverseDeterminant = ({-uv_ij.y} * {v_ik.x} + {uv_ik.y} * {v_ij.x}) * {inverseDeterminant} = {D}\r\n"
-);
-
 			double uShift, vShift, scaleX, scaleY, rotation;
-bakeAxes = true;	//Temp settings for testing
 
-		//BRANCH 1 //Is this for original quake 1 format????
 			switch (_format) {
 				default:
-				case Map.Format.Q1:	
+				case Map.Format.Q1:
+				//BASICALLY WORKS
 				// Shift
 					uShift = uv_i.x - (A * v_i.x + B * v_i.y);
 					vShift = uv_i.y - (C * v_i.x + D * v_i.y);
@@ -127,13 +111,37 @@ bakeAxes = true;	//Temp settings for testing
 					scaleY = Math.Sqrt(B*B + D*D);
 				// Rotation (optional)
 					rotation = Math.Atan2(C, A) * MaffConst.radToDeg;
-
-ComprehensiveLog.Add(
-	$"\t\tuShift = UV_Origin.x - (A * origin.x + B * origin.y) = {uv_i.x} - ({A} * {v_i.x} + {B} * {v_i.y}) = {uShift}",
-	$"\t\tvShift = UV_Origin.y - (C * origin.x + D * origin.y) = {uv_i.y} - ({C} * {v_i.x} + {D} * {v_i.y}) = {vShift}"
-);
+				/*
+				//SUPPOSED TO REMOVE SHEAR, BUT PRODUCES MORE NaNs
+				//Orthogonalize (remove shear)
+					Vector2 U = new Vector2(A, C);
+					Vector2 V = new Vector2(B, D);
+					scaleX = U.magnitude;
+					U.Normalize();         //Normalize U
+					double dot = Vector2.Dot(U, V);
+					V.Add(U.Scaled(-dot)); //Orthogonalize V
+					scaleY = V.magnitude;
+					if (scaleY < 1e-8) {   //Handle NaN
+						V = new Vector2(-U.y, U.x);
+						scaleY = 0;
+					}
+					else V.Normalize();    //Normalize V
+				//Rotation
+					rotation = Math.Atan2(U.y, U.x) * MaffConst.radToDeg;
+					rotation.Round(1);
+				//Projection distortion compensation
+					Vector3 uAxis_ = arbitraryTextureAxis_right.Added(_faceNormal.Scaled(-Vector3.Dot(arbitraryTextureAxis_right, _faceNormal)));
+					Vector3 vAxis_ = arbitraryTextureAxis_down.Added(_faceNormal.Scaled(-Vector3.Dot(arbitraryTextureAxis_down, _faceNormal)));
+					if (uAxis_.magnitude > 1e-6d) scaleX *= 1/uAxis_.magnitude;
+					if (vAxis_.magnitude > 1e-6d) scaleY *= 1/vAxis_.magnitude;
+				//Rescale axes
+					U.Scale(scaleX);
+					V.Scale(scaleY);
+				//Shift
+					uShift = uv_i.x - (U.x * v_i.x + U.y * v_i.y);
+					vShift = uv_i.y - (V.x * v_i.x + V.y * v_i.y);
+				*/
 					return $"{uShift} {vShift} {rotation} {scaleX} {scaleY}";
-			//BRANCH 2 (Valve220 format)
 				case Map.Format.Valve220: 
 					Vector3 uAxis = arbitraryTextureAxis_right.Scaled(A).Added(arbitraryTextureAxis_down.Scaled(B));
 					Vector3 vAxis = arbitraryTextureAxis_right.Scaled(C).Added(arbitraryTextureAxis_down.Scaled(D));
@@ -148,13 +156,6 @@ ComprehensiveLog.Add(
 					Vector3 worldOrigin = _mesh.vertices[_face.vertexIndices[i_]];
 					uShift = uv_i.x - Vector3.Dot(uAxis, worldOrigin);
 					vShift = uv_i.y - Vector3.Dot(vAxis, worldOrigin);
-
-ComprehensiveLog.Add(
-	$"\t\tuAxis = textureAxis_right * A + textureAxisDown * B = {arbitraryTextureAxis_right} * {A} + {arbitraryTextureAxis_down} * {B} = {uAxis}",
-	$"\t\tvAxis = textureAxis_right * C + textureAxisDown * D = {arbitraryTextureAxis_right} * {C} + {arbitraryTextureAxis_down} * {D} = {vAxis}",
-	$"\t\tuShift = UV_Origin.x - Dot(uAxis, worldOrigin) = {uv_i.x} - Dot({uAxis}, {worldOrigin}) = {uShift}",
-	$"\t\tvShift = UV_Origin.y - Dot(vAxis, worldOrigin) = {uv_i.y} - Dot({vAxis}, {worldOrigin}) = {vShift}\r\n"
-);
 					if (bakeAxes) {
 						scaleX = 1;
 						scaleY = 1;

@@ -30,12 +30,4 @@ test.3do => .map
 
 
 
-
-.map textures
-
-* Are projected along one of the 3 axes.
-* If 45 degrees:
-	y-axis takes precedent over x-axis.
-	z-axis takes precedent over y-axis and x-axis.
-
 So we get an UniversalMesh from the 3do, during which we adjust the textureVertices by 1/textureSize.

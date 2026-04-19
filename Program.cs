@@ -83,7 +83,7 @@ namespace Program {
 							Console.Write("New universal mesh: ");
 							UM.LogData();
 							Console.WriteLine($"\"{UM.materials.Stringify("\" \"")}\"");
-							UM.WriteToFile("test/workingMesh.txt");
+							//UM.WriteToFile("test/workingMesh.txt");
 							File.WriteAllText("test/output.map", Output.Map.Output(
 								UM,		//UniversalMesh _mesh
 								320,	//float scaleFactor

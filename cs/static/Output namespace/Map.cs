@@ -63,10 +63,6 @@ namespace Output {
 					break;
 			}
 
-
-ComprehensiveLog.Reset();
-
-
 		//BRUSHES (TRIANGLIFICATION)
 		// * Gets face normal per-triangle
 		// * * During testing some triangles would produce empty brushes. It's possible that the imprecision introduced by vertex rounding was causing the face normal to be unsuitable.
@@ -83,18 +79,6 @@ ComprehensiveLog.Reset();
 				//Get triangles
 					UniversalMesh.Face[] triangles = scaledMesh.GetTriangles(_face);
 					//int FIRST_THISFACE = DEBUGCOUNTER;
-
-
-string cl1 = "Face with vertices:";
-string cl2 = "Texture vertices:  ";
-foreach (int ind in _face.vertexIndices) {
-	cl1 += $" {ind} {scaledMesh.vertices[ind]}"; 
-	cl2 += $" {ind} {scaledMesh.textureVertices[ind]}";
-}
-cl2 += "\r\n";
-ComprehensiveLog.Add(cl1, cl2);
-
-
 				//Iterate triangles
 					for (int j = 0; j < triangles.Length; j++) {
 					//Get brush vertices
