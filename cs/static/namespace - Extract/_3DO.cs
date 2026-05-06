@@ -43,7 +43,7 @@ namespace Extract {
 			}
 		}
 
-		public static UniversalMesh? Extract (in Input_PlainText _input, bool useFaceNormals = true, bool normalizeTextureVertices = true) {
+		public static UniversalMesh? Extract (in Input_PlainText _input, bool useFaceNormals = true, bool normalizeTextureVertices = false) {
 			if (_input.streamReader is null) return null;
 			string[] fileContents = _input.fileContents;
 			
@@ -59,7 +59,7 @@ namespace Extract {
 			//If not recording a section...
 				if (recordingSection == null) {
 				//Try and identify a section
-					for (int j = searchTerms.Count-1; j > -1; j--) if (fileContents[i].StartsWith(searchTerms[j])) {
+					for (int j = searchTerms.Count-1; j > -1; j--) if (fileContents[i].Trim().StartsWith(searchTerms[j])) {
 						sections.Add(searchTerms[j], new Section());
 						recordingSection = searchTerms[j];
 						searchTerms.Remove(searchTerms[j]);
@@ -67,10 +67,13 @@ namespace Extract {
 				}
 			//Else...
 				else {
+					string[] line = fileContents[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 				//If line has non-zero length...
-					if (fileContents[i].Length > 0) {
+					if (line.Length > 0) {
+					// Ignore comments
+						if (line[0][0] == '#') continue;
 					//... and it starts with a number...
-						if (Char.IsDigit(fileContents[i][0])) {
+						if (Char.IsDigit(line[0][0])) {
 							if (sections[recordingSection!].i_firstEntry < 0) {
 								sections[recordingSection!] = new Section(i, 1);
 								continue;
@@ -104,7 +107,7 @@ namespace Extract {
 			Vector3[] vertices = new Vector3[sections["VERTICES"].entries];
 			i_offset = sections["VERTICES"].i_firstEntry;
 			for (int i = 0; i < vertices.Length; i++) {
-				string[] line = fileContents[i_offset+i].Split(' ');
+				string[] line = fileContents[i_offset+i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 				vertices[i] = new Vector3(
 					double.Parse(line[1]),
 					double.Parse(line[2]),
@@ -120,7 +123,7 @@ namespace Extract {
 				vertexNormals = new Vector3[sections["FACE NORMALS"].entries];
 				i_offset = sections["FACE NORMALS"].i_firstEntry;
 				for (int i = 0; i < vertexNormals.Length; i++) {
-					string[] line = fileContents[i_offset+i].Split(' ');
+					string[] line = fileContents[i_offset+i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 					vertexNormals[i] = new Vector3(
 						double.Parse(line[1]),
 						double.Parse(line[2]),
@@ -132,7 +135,7 @@ namespace Extract {
 				vertexNormals = new Vector3[sections["VERTEX NORMALS"].entries];
 				i_offset = sections["VERTEX NORMALS"].i_firstEntry;
 				for (int i = 0; i < vertexNormals.Length; i++) {
-					string[] line = fileContents[i_offset+i].Split(' ');
+					string[] line = fileContents[i_offset+i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 					vertexNormals[i] = new Vector3(
 						double.Parse(line[1]),
 						double.Parse(line[2]),
@@ -147,7 +150,7 @@ namespace Extract {
 			Vector2[] textureVertices = new Vector2[sections["TEXTURE VERTICES"].entries];
 			i_offset = sections["TEXTURE VERTICES"].i_firstEntry;
 			for (int i = 0; i < textureVertices.Length; i++) {
-				string[] line = fileContents[i_offset+i].Split(' ');
+				string[] line = fileContents[i_offset+i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 				textureVertices[i] = new Vector2(
 					double.Parse(line[1]),
 					double.Parse(line[2])
@@ -160,7 +163,7 @@ namespace Extract {
 			string[] materials = new String[sections["MATERIALS"].entries];
 			i_offset = sections["MATERIALS"].i_firstEntry;
 			for (int i = 0; i < materials.Length; i++) {
-				materials[i] = fileContents[i_offset+i].Split(' ')[1];
+				materials[i] = fileContents[i_offset+i].Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
 			}
 
 
@@ -174,11 +177,11 @@ namespace Extract {
 		//HELPER FUNCTIONS
 		//Parse a line of data that defines a face.
 			int[] Parse_Face (string _line) {
-				return _line.Split(' ').Select((x, j)=>{
+				return _line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select((x, j)=>{
 					if (j > 7 && j%2 == 0) return int.Parse(x.TrimEnd(','));	//Vertex/vertex normal index. Texture vertex indices come after the ','.
 					if (j == 0) return int.Parse(x.TrimEnd(':'));				//Face entry number in the file.
 					if (j == 2) return Convert.ToInt32(x, 16);					//IDK what values 2-6 are but the first one is in hex (I think).
-					return int.Parse(x);										//Any other value that doesn't require complex parsing. Includes material index and texture vertex indices.
+					return (int)double.Parse(x);								//Any other value that doesn't require complex parsing. Includes material index and texture vertex indices. May be non-integer, which is annoying, but we're not using these values.
 				}).ToArray();
 			}
 		//Get vertex indices
@@ -220,12 +223,16 @@ namespace Extract {
 			if (normalizeTextureVertices && materialsFound) {
 			//Get scalars (we will scale the texture coordinates by 1/textureSize to get the normalized values).
 				Vector2[] materialScalars = materials.Select((_materialName)=>{
-					Input_Binary _bmp = new Input_Binary($"{materialDirectory}/{_materialName}");
-					if (_bmp.binaryReader == null) return new Vector2(1,1);
-					_bmp.fileStream!.Seek(BMP.byteData_pixelWidth.index, SeekOrigin.Begin);
-					uint x = _bmp.binaryReader!.ReadUInt32();
-					uint y = _bmp.binaryReader!.ReadUInt32();
-					return new Vector2(1d/x, 1d/y);
+					_materialName = _materialName.Substring(0, _materialName.LastIndexOf('.'))+".bmp";
+					using (Input_Binary _bmp = new Input_Binary($"{materialDirectory}/{_materialName}")) {
+						uint x, y;
+						if (!BMP.TryGetWidthHeight(_bmp, out x, out y)) return new Vector2(1,1);
+						Log.Multi(
+							new Log.ColorLog("> ", ConsoleColor.White),
+							new Log.ColorLog($"Scalar for {_materialName} is ({1d/x}, {1d/y})", ConsoleColor.Green)
+						);
+						return new Vector2(1d/x, 1d/y);
+					}
 				}).ToArray();
 				List<Vector2> normalizedTextureVertices = new List<Vector2>(textureVertices.Length);
 			//Iterate faces...
@@ -260,6 +267,7 @@ namespace Extract {
 						new Log.ColorLog("> ", ConsoleColor.White),
 						new Log.ColorLog("Materials directory not found!", ConsoleColor.Red)
 					);
+					normalizeTextureVertices = false;
 				}
 			//Iterate faces
 				for (int i = 0; i < faces.Length; i++) {
@@ -284,7 +292,7 @@ namespace Extract {
 			//	vertices, vertexNormals, textureVertices, materials, faces
 			//);
 			UniversalMesh universalMesh = UniversalMesh.Condensed (
-				vertices, vertexNormals, textureVertices, materials, faces, false
+				vertices, vertexNormals, textureVertices, materials, faces, normalizeTextureVertices, false
 			);
 			return universalMesh;
 

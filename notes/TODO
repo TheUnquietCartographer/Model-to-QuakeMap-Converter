@@ -1,0 +1,11 @@
+* Great now I fixed getting using the materials directory to scale the texture vertices but all the textures are scaled really fucking small for no reason.
+
+
+* Star Wars Jedi Knight - Extract from .JKL files instead of .3DO. Include entities in the extraction.
+
+* Export .JKL files using ZED.
+* * Actually, GOB Explorer will do it quicker.
+
+* Triangluation method - check for vertices within the bounds of the triangle.
+
+* Test Star Wars Jedi Knight exported level.

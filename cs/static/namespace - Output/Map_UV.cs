@@ -2,12 +2,17 @@ using System;
 using Maff;
 using DoubleExtensions;
 using System.Linq;
+using CollectionExtensions;
 
 namespace Output {
 	
-	internal static class Map_UV_Comprehensive {
+	internal static class Map_UV {
 
 		public static string TranslateUVToMap (UniversalMesh _mesh, UniversalMesh.Face _face, int dbg_faceIndex, Map.Format _format, bool bakeAxes = false) {
+		//
+		//	This function was supposed to accept normalized UVs but only works with texel inputs.
+		//	So I guess we're going to have to scale up all the UVs from the modern formats.
+		//
 
 		//TRANSFORM FACE VERTICES INTO 2D SPACE
 			//Facing       Cross        Right vector	//Facing       Cross        Down vector

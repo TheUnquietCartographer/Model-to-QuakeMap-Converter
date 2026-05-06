@@ -13,6 +13,9 @@ using System;
 			double shrinkFactor = 1/this.magnitude;
 			return new Vector3(this.x * shrinkFactor, this.y * shrinkFactor, this.z * shrinkFactor);
 		}}
+		public Vector3 absolute {get{
+			return new Vector3(Math.Abs(this.x), Math.Abs(this.y), Math.Abs(this.z));
+		}}
 		public bool isFinite {get{return (double.IsFinite(this.x) && double.IsFinite(this.y) && double.IsFinite(this.z));}}
 		public bool isNaN {get{return (double.IsNaN(this.x) && double.IsNaN(this.y) && double.IsNaN(this.z));}}
 		public bool isInfiniteOrNaN {get{return (!this.isFinite || this.isNaN);}}

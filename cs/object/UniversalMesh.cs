@@ -85,6 +85,14 @@ using DoubleExtensions;
 		public string[] materials {get; private set;}
 		public Face[] faces {get; private set;}
 
+		private bool usesTexels_;
+		public bool usesTexels {get{return usesTexels_;}}
+		public bool usesNormalizedUVs {get{return !usesTexels_;}}
+
+		public int vertexCount {get{return this.vertices.Length;}}
+		public int materialsCount {get{return this.materials.Length;}}
+		public int facesCount {get{return this.faces.Length;}}
+
 	//
 	//	CONSTRUCTORS
 	//
@@ -93,13 +101,15 @@ using DoubleExtensions;
 			IEnumerable<Vector3> _vertexNormals,
 			IEnumerable<Vector2> _textureVertices,
 			IEnumerable<string> _materials,
-			IEnumerable<Face> _faces
+			IEnumerable<Face> _faces,
+			bool usesNormalizedUVs
 		) {
 			this.vertices = _vertices.ToArray();
 			this.vertexNormals = _vertexNormals.ToArray();
 			this.textureVertices = _textureVertices.ToArray();
 			this.materials = _materials.ToArray();
 			this.faces = _faces.ToArray();
+			this.usesTexels_ = !usesNormalizedUVs;
 		}
 
 	//CREATE A CONDENSED MESH
@@ -111,6 +121,7 @@ using DoubleExtensions;
 			IEnumerable<Vector2> _textureVertices,
 			IEnumerable<string> _materials,
 			IEnumerable<Face> _faces,
+			bool usesNormalizedUVs,
 			bool removeDuplicateFaces
 		) {
 			return Condensed(
@@ -119,6 +130,7 @@ using DoubleExtensions;
 				_textureVertices.ToList(),
 				_materials.ToList(),
 				_faces.ToList(),
+				usesNormalizedUVs,
 				removeDuplicateFaces
 			);
 		}
@@ -128,6 +140,7 @@ using DoubleExtensions;
 			List<Vector2> _textureVertices,
 			List<string> _materials,
 			List<Face> _faces,
+			bool usesNormalizedUVs,
 			bool removeDuplicateFaces
 		) {
 		//Function to condense input list
@@ -157,7 +170,7 @@ using DoubleExtensions;
 			Dictionary<int, int> changeTextureVertexIndices = Condense(ref _textureVertices);
 			Dictionary<int, int> changeMaterialIndices = Condense(ref _materials);
 		//ITERATE FACES
-		//Remove duplicate faces
+		//Remove duplicate faces (expensive and potentially destructive)
 			if (removeDuplicateFaces) for (int i = 0; i < _faces.Count; i++) {
 					Face face_i = _faces[i];
 					bool duplicateRemoved = false;
@@ -190,7 +203,8 @@ using DoubleExtensions;
 				_vertexNormals,
 				_textureVertices,
 				_materials,
-				_faces
+				_faces,
+				usesNormalizedUVs
 			);
 		}
 
@@ -201,7 +215,8 @@ using DoubleExtensions;
 				this.vertexNormals,
 				this.textureVertices,
 				this.materials,
-				this.faces
+				this.faces,
+				this.usesNormalizedUVs
 			);
 		}
 		public UniversalMesh Scaled (double scaleFactor, double rounding) {
@@ -210,7 +225,8 @@ using DoubleExtensions;
 				this.vertexNormals,
 				this.textureVertices,
 				this.materials,
-				this.faces
+				this.faces,
+				this.usesNormalizedUVs
 			);
 		}
 		public UniversalMesh Scaled (double scaleFactor, double rounding, bool swapYZCoordinates) {
@@ -228,7 +244,8 @@ using DoubleExtensions;
 				this.vertexNormals,
 				this.textureVertices,
 				this.materials,
-				this.faces
+				this.faces,
+				this.usesNormalizedUVs
 			);
 		}
 

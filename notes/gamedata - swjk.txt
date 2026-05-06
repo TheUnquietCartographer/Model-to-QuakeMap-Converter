@@ -1,0 +1,22 @@
+WORLD GEOMETRY
+
+Levels can be exported from ZED in .3DO or .JKL format, or from a .GOB or .GOO file in .JKL format using GOB Explorer.
+* Both are plain text format.
+* .3DO contains the world geometry only. .JKL contains additional information such as Thing placement.
+
+
+THINGS
+
+Things can be exported from a .GOB or .GOO file in .3DO format using GOB Explorer.
+
+
+MATERIALS
+
+A list of Materials can be gotten from the .3DO or .JKL file.
+* Materials can be exported from a .GOB or a .GOO file using GOB Explorer. The materials are usually stored in a resource package separate from the level data.
+* Materials can be opened in JKPaint and exported as bitmaps.
+* * The program will log a list of all materials "wrapped" "in" "quotes" to facilitate this - all you have to do is go File -> Open and paste the list to open them all at once.
+* * * This does mean that for each .3DO you will have to run it through the program twice, once to get the materials and export them to the correct directory, and again to ensure that the UVs are properly computed using the materials directory.
+* * You can quickly export them by doing File -> Save Bitmap (Alt+F -> B -> Enter), File -> Close (Alt+F -> C).
+* * * You don't want "Save All Bitmaps"; this saves mipmaps.
+* * Don't forget to choose the correct color palette when getting the materials for the levels. While they are mostly the same, they do make a difference. I do not know if you can get away with just using 01narsh.cmp for the Things.

@@ -5,19 +5,8 @@ namespace Extract {
 
 	internal static class BMP {
 
-		public struct ByteData {
-			public uint index;
-			public uint size;
-			private bool isLittleEndian_;
-			public bool isLittleEndian {get => isLittleEndian_; set => isLittleEndian_ = value;}
-			public bool isBigEndian {get => !isLittleEndian_; set => isLittleEndian_ = !value;}
-			public ByteData (uint _index, uint _size, bool littleEndian = true) {
-				this.index = _index;
-				this.size = _size;
-				this.isLittleEndian_ = littleEndian;
-			}
-		}
-		public static readonly ByteData byteData_byteOffset_pixels = new ByteData(10, 4, true),
+		public static readonly ByteData
+			byteData_byteOffset_pixels = new ByteData(10, 4, true),
 			byteData_pixelWidth = new ByteData(18, 4, true),
 			byteData_pixelHeight = new ByteData(22, 4, true),
 			byteData_bitsPerPixel = new ByteData(28, 2, true)
@@ -28,6 +17,23 @@ namespace Extract {
 		public static uint BytesPerRow_Padded (uint _pixelWidth, uint _bitsPerPixel) {
 			return (BytesPerRow(_pixelWidth, _bitsPerPixel) + 3) & ~3u;
 		}
+		public static bool TryGetWidthHeight (Input_Binary _input, out uint width, out uint height) {
+			if (_input.binaryReader == null) {
+				Log.Multi(
+					new Log.ColorLog("> ", ConsoleColor.White),
+					new Log.ColorLog($"{_input.fullname} not found!", ConsoleColor.Red)
+				);
+				width = 0; height = 0;
+				return false;
+			}
+			WidthHeight(_input.fileStream!, _input.binaryReader!, out width, out height);
+			return true;
+		} 
+		public static void WidthHeight (FileStream _fs, BinaryReader _br, out uint width, out uint height) {
+			_fs.Seek(BMP.byteData_pixelWidth.index, SeekOrigin.Begin);
+			width = _br.ReadUInt32();
+			height = _br.ReadUInt32();
+		} 
 /*
 
 	# Read palette if needed

@@ -21,11 +21,9 @@ namespace Output {
 			bool trianglifyFaces,
 			bool swapYZCoordinates,
 			Format format,
-			string textureDirectory = ""
+			string q2TextureDirectory = ""
 		) {
 		//SCALE MESH VERTICES
-		// * I don't want to scale the mesh, preferring to preserve the input mesh,
-		//   but it's causing too many issues/too much messiness in the code.
 			UniversalMesh scaledMesh = _mesh.Scaled(scaleFactor, rounding, swapYZCoordinates);	
 
 		//LOCAL FUNCTIONS & DELEGATES
@@ -39,7 +37,8 @@ namespace Output {
 			string GetTexturePath(UniversalMesh.Face _face) {
 				string textureName = scaledMesh.materials[_face.materialIndices[0]];
 				textureName = textureName.Substring(0, textureName.IndexOf('.'));
-				return $"{textureDirectory}/{textureName}".TrimStart('/');
+				if (format == Format.Q2) return $"{q2TextureDirectory}/{textureName}";
+				return textureName;
 			}
 
 		//BEGIN OUTPUT
@@ -49,13 +48,13 @@ namespace Output {
 			switch (format) {
 				default:
 				case Format.Q1:
-					output += $"\t\"wad\" \"{textureDirectory.Trim('/')}.wad\"\r\n";
-					textureDirectory = "";
+					output += $"\t\"wad\" \"{q2TextureDirectory.Trim('/')}.wad\"\r\n";
+					q2TextureDirectory = "";
 					break;
 				case Format.Valve220:
 					output += $"\t\"mapversion\" \"220\"\r\n";
-					output += $"\t\"wad\" \"{textureDirectory.Trim('/')}.wad\"\r\n";
-					textureDirectory = "";
+					output += $"\t\"wad\" \"{q2TextureDirectory.Trim('/')}.wad\"\r\n";
+					q2TextureDirectory = "";
 					break;
 				case Format.Q2:
 					break;
@@ -65,7 +64,6 @@ namespace Output {
 
 		//BRUSHES (TRIANGLIFICATION)
 		// * Gets face normal per-triangle
-		// * * During testing some triangles would produce empty brushes. It's possible that the imprecision introduced by vertex rounding was causing the face normal to be unsuitable.
 		// * Uses scaled & rounded vertices
 		// * Inverts face normals
 		// * Reverses vertex order
@@ -106,10 +104,7 @@ namespace Output {
 						}
 					//Get remaining useful data
 						Vector3 triangleNormal = scaledMesh.GetTriangleNormal(triangles[j]).Scaled(brushThickness);
-
-						//string textureSettings = DefaultTextureSettings(format, triangleNormal);
-						string textureSettings = Map_UV_Comprehensive.TranslateUVToMap(scaledMesh, triangles[j], i, format);
-
+						string textureSettings = Map_UV.TranslateUVToMap(scaledMesh, triangles[j], i, format);
 					//Create backface vertices
 						brushVertices[3] = brushVertices[0].Added(triangleNormal);
 						brushVertices[4] = brushVertices[1].Added(triangleNormal);
@@ -145,8 +140,7 @@ namespace Output {
 					UniversalMesh.Face _face = scaledMesh.faces[i];
 					Vector3 faceNormal = GetFaceNormal(_face);
 					string texturePath = GetTexturePath(_face);
-					//string textureSettings = Map_UV_1.TranslateUVToMap(scaledMesh, _face, i, format);
-					string textureSettings = DefaultTextureSettings(format, faceNormal);
+					string textureSettings = Map_UV.TranslateUVToMap(scaledMesh, _face, i, format);
 				//Get brush vertices
 					Vector3[] brushVertices = new Vector3[_face.vertexCount * 2];
 				//Reverse vertex order?

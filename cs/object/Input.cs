@@ -137,13 +137,22 @@ using System.IO;
 			);
 		}
 
+		public static FileStream? OpenOrThrow (string fullpath) {
+			try { return File.Open(fullpath, FileMode.Open); }
+			catch (FileNotFoundException e) { Console.WriteLine($"File not found: {e.Message}"); }
+			catch (DirectoryNotFoundException e) { Console.WriteLine($"Directory not found: {e.Message}"); }
+			catch (UnauthorizedAccessException e) { Console.WriteLine($"Access denied: {e.Message}"); }
+			catch (Exception e) { Console.WriteLine($"An unexpected error occurred: {e.Message}"); }
+			return null;
+		}
+
 	}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	public abstract class Input_Derived : Input {
+	public abstract class Input_Derived : Input, IDisposable {
 
 		public FileStream? fileStream = null;
 
@@ -151,13 +160,12 @@ using System.IO;
 		public Input_Derived (string fullpath) : base (fullpath) {}
 
 	//SET STREAM READER OR BINARY READER (DERIVED CLASSES ONLY)
-		protected virtual void TrySetFileStream (in string _fullpath) {
-			try { this.fileStream = File.Open(_fullpath, FileMode.Open); }
-		//	catch (FileNotFoundException e) { Console.WriteLine($"File not found: {e.Message}"); }
-		//	catch (DirectoryNotFoundException e) { Console.WriteLine($"Directory not found: {e.Message}"); }
-		//	catch (UnauthorizedAccessException e) { Console.WriteLine($"Access denied: {e.Message}"); }
-		//	catch (Exception e) { Console.WriteLine($"An unexpected error occurred: {e.Message}"); }
-			catch { this.fileStream = null; }
+		protected virtual void TrySetFileStream (string _fullpath) {
+			this.fileStream = OpenOrThrow(_fullpath);
+		}
+
+		public virtual void Dispose () {
+			this.fileStream?.Dispose();
 		}
 
 	}
@@ -186,19 +194,24 @@ using System.IO;
 			TrySetFileStream(_input.fullpath);
 		}
 		public Input_PlainText (string fullpath) : base(fullpath) {
+			//Calls base constructor
 			TrySetFileStream(fullpath);
 		}
 
 	//
 	//	FUNCTIONS
 	//
-		protected override void TrySetFileStream (in string _fullpath) {
+		protected override void TrySetFileStream (string _fullpath) {
 			base.TrySetFileStream(_fullpath);
 			if (this.fileStream == null) {
 				this.streamReader = null;
 				return;
 			}
 			this.streamReader = new StreamReader(this.fileStream);
+		}
+		public override void Dispose () {
+			this.fileStream?.Dispose();
+			this.streamReader?.Dispose();
 		}
 		public string[] fileContents {get{
 				if (this.streamReader == null) return Array.Empty<string>();
@@ -234,19 +247,24 @@ using System.IO;
 			TrySetFileStream(_input.fullpath);
 		}
 		public Input_Binary (string fullpath) : base(fullpath) {
+			//Calls base constructor
 			TrySetFileStream(fullpath);
 		}
 
 	//
 	//	FUNCTIONS
 	//
-		protected override void TrySetFileStream (in string _fullpath) {
+		protected override void TrySetFileStream (string _fullpath) {
 			base.TrySetFileStream(_fullpath);
 			if (this.fileStream == null) {
 				this.binaryReader = null;
 				return;
 			}
 			this.binaryReader = new BinaryReader(this.fileStream);
+		}
+		public override void Dispose () {
+			this.fileStream?.Dispose();
+			this.binaryReader?.Dispose();
 		}
 
 	}
