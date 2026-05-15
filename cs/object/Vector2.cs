@@ -35,28 +35,35 @@ using System;
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Add
+	//Add
 		public void Add (Vector2 other) {
 			this.x += other.x; this.y += other.y;
 		}
-		public void Add (params double[] components) {
-			switch (components.Length) {
-				case >= 2: this.x += components[0]; this.y += components[1]; return;
-				case 1: this.x += components[0]; return;
-			}
+		public void Add (double x, double y = 0) {
+			this.x += x; this.y += y;
 		}
 		public Vector2 Added (Vector2 other) {
 			return new Vector2(this.x + other.x, this.y + other.y);
 		}
-		public Vector2 Added (params double[] components) {
-			switch (components.Length) {
-				case >= 2:  return new Vector2(this.x + components[0], this.y + components[1]);
-				case 1:  return new Vector2(this.x + components[0], this.y);
-			}
-			return new Vector2(this.x, this.y);
+		public Vector2 Added (double x, double y = 0) {
+			return new Vector2(this.x + x, this.y + y);
 		}
 
-	//Sum
+	//Subtract
+		public void Subtract (Vector2 other) {
+			this.x -= other.x; this.y -= other.y;
+		}
+		public void Subtract (double x, double y = 0) {
+			this.x -= x; this.y -= y;
+		}
+		public Vector2 Subtracted (Vector2 other) {
+			return new Vector2(this.x - other.x, this.y - other.y);
+		}
+		public Vector2 Subtracted (double x, double y = 0) {
+			return new Vector2(this.x - x, this.y - y);
+		}
+
+	//Combine
 		public static Vector2 Combine (params Vector2[] vectors) {
 			for (int i = 1; i < vectors.Length; i++) vectors[0].Add(vectors[i]);
 			return vectors[0];
@@ -73,11 +80,8 @@ using System;
 		public void Scale (Vector2 other) {
 			this.x += other.x; this.y += other.y;
 		}
-		public void Scale (params double[] components) {
-			switch (components.Length) {
-				case >= 2: this.x *= components[0]; this.y *= components[1]; return;
-				case 1: this.x *= components[0]; return;
-			}
+		public void Scale (double x, double y = 1) {
+			this.x *= x; this.y *= y;
 		}
 
 		public Vector2 Scaled (double scaleFactor) {
@@ -90,12 +94,8 @@ using System;
 		public Vector2 Scaled (Vector2 other) {
 			return new Vector2(this.x * other.x, this.y * other.y);
 		}
-		public Vector2 Scaled (params double[] components) {
-			switch (components.Length) {
-				case >= 2: return new Vector2(this.x * components[0], this.y * components[1]);
-				case 1: return new Vector2(this.x * components[0], this.y);
-			}
-			return new Vector2(this.x, this.y);
+		public Vector2 Scaled (double x, double y = 1) {
+			return new Vector2(this.x * x, this.y * y);
 		}
 
 	//Invert

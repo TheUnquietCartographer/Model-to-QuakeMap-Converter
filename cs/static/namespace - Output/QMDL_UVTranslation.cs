@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Output {
 
 	internal class QMDL_UVTranslation {
@@ -11,7 +15,7 @@ namespace Output {
 			}
 		}
 
-		private struct QMDL_UV {
+		public struct QMDL_UV : IEquatable<QMDL_UV> {
 			public int x, y;
 			public bool onSeam;
 		//Constructor
@@ -21,7 +25,7 @@ namespace Output {
 			}
 		//Equality checks
 			public bool Equals(QMDL_UV other) => x == other.x && y == other.y && onSeam == other.onSeam;
-    		public override bool Equals(object obj) => obj is QMDL_UV other && Equals(other);
+    		public override bool Equals(object? obj) => obj is QMDL_UV other && Equals(other);
     		public override int GetHashCode() => HashCode.Combine(x, y, onSeam);
 		}
 
@@ -29,6 +33,7 @@ namespace Output {
 
 		public List<QMDL_UV> QMDL_UVs {get; private set;}
 		public UniversalMesh.Face[] QMDL_triangles {get; private set;}
+		public bool[] QMDL_facesFront {get; private set;}
 
 
 
@@ -37,7 +42,7 @@ namespace Output {
 	//	CONSTRUCTOR
 	//
 	//////////////////////////////////////////////////
-		public QMDL_UVTranslation (UniversalMesh _mesh, int _skinWidth) {
+		public QMDL_UVTranslation (UniversalMesh _mesh, int _skinWidth, in UniversalMesh.Face[]? _triangles = null) {
 		// ! There is conflicting information as to whether texture vertices are stored as short (2 bytes) or int (4 bytes) - assume int.
 		// * Each texture coordinate has an onseam flag, an x, and a y value.
 		// * The onseam flag describes a texture vertex that is shared by a more than one triangle, where some of the triangles straddle the seam where the texture would wrap.
@@ -71,7 +76,8 @@ namespace Output {
 		//
 		
 		//GET TRIANGLES
-			this.QMDL_triangles = _mesh.Faces.SelectMany(x => x.GetTriangles()).ToArray();
+			if (_triangles != null) this.QMDL_triangles = _triangles!;
+			else this.QMDL_triangles = _mesh.faces.SelectMany(x => _mesh.GetTriangles(x)).ToArray();
 
 		//FOR EACH VERTEX IN THE MESH, GET ALL ASSOCIATED UVs
 			List<UVRef>[] UVsPerVertex = new List<UVRef>[_mesh.vertexCount];
@@ -101,7 +107,7 @@ namespace Output {
 				}
 			//Check X
 				{
-					bool SOLVED;
+					bool SOLVED = false;
 					for (int j = 0; j < UVs_thisVertex.Count; j++) {
 						int xRef = Wrap(UVs_thisVertex[j].x);
 						int backfaceValue = Wrap(xRef + _skinWidth / 2);
@@ -200,7 +206,7 @@ namespace Output {
 						this.QMDL_triangles[_UV.triInd].textureVertexIndices[_UV.corner] = newUVIndex;
 					}
 					clusterAssignedToUV[j] = true;
-				//If backface cluster was found, assign that the same QMDL UV index
+				//If backface cluster was found, assign that to the same QMDL UV index
 					if (backfacePartnerIndex != -1) {
 						foreach (UVRef _UV in UVClustersPerVertex[backfacePartnerIndex]) {
 							this.QMDL_triangles[_UV.triInd].textureVertexIndices[_UV.corner] = newUVIndex;
@@ -213,6 +219,30 @@ namespace Output {
 				//Written QMDL_triangles
 
 			//End iterating vertices
+			}
+
+		//DETERMINE TRIANGLE FACINGS
+			this.QMDL_facesFront = new bool[this.QMDL_triangles.Length];
+			for (int i = 0; i < this.QMDL_triangles.Length; i++) {
+			//Compare grouping (high score indicates less grouping, greater likelihood of being a backface)
+				int Score(int a, int b, int c) {
+					return WrapDistance(a,b) + WrapDistance(b,c) + WrapDistance(c,a);
+				}
+				UniversalMesh.Face tri = this.QMDL_triangles[i];
+				QMDL_UV UV0 = this.QMDL_UVs[tri.textureVertexIndices[0]];
+				QMDL_UV UV1 = this.QMDL_UVs[tri.textureVertexIndices[1]];
+				QMDL_UV UV2 = this.QMDL_UVs[tri.textureVertexIndices[2]];
+				int frontScore = Score(
+					UV0.x,
+					UV1.x,
+					UV2.x
+				);
+				int backScore = Score(
+					UV0.onSeam ? Wrap(UV0.x + _skinWidth / 2) : UV0.x,
+					UV1.onSeam ? Wrap(UV1.x + _skinWidth / 2) : UV1.x,
+					UV2.onSeam ? Wrap(UV2.x + _skinWidth / 2) : UV2.x
+				);
+				if (frontScore <= backScore) this.QMDL_facesFront[i] = true;
 			}
 
 		//Close constructor

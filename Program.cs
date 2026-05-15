@@ -162,16 +162,16 @@ namespace Program {
 								Console.WriteLine($"\"{UM.materials.Stringify("\" \"")}\"");
 								//UM.WriteToFile("output/workingMesh.txt");
 								File.WriteAllText($"output/{_thisInput.filename}.map", Output.Map.Output(
-									UM,		//UniversalMesh _mesh
-									320,	//float scaleFactor
-									1,		//float rounding
-									8,		//int brushThickness
-									false,	//bool reverseVertexOrder
-									false,	//bool invertFaceNormals
-									true,	//bool trianglifyFaces
-									false,	//bool swapYZCoordinates
-									Output.Map.Format.Valve220,	//Map.Format format
-									$"{_thisInput.filename}/"	//string textureDirectory
+									thisInput, //Input _input
+									UM,		   //UniversalMesh _mesh
+									320,	   //float scaleFactor
+									1,		   //float rounding
+									8,		   //int brushThickness
+									false,	   //bool reverseVertexOrder
+									false,	   //bool invertFaceNormals
+									true,	   //bool trianglifyFaces
+									false,  	//bool swapYZCoordinates
+									Output.Map.Format.Valve220	//Map.Format format
 								));
 							}
 						}

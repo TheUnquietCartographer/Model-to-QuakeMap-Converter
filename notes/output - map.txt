@@ -1,7 +1,0 @@
-Don't use standard "Q1" format. Use Valve220, which will always get the correct texture settings.
-
-In Q1 format, .map textures are projected along one of 3 world axes:
-If a face is at 45 degrees:
-*	The Y-axis takes precedent over X-axis.
-*	The Z-axis takes precedent over Y-axis and X-axis.
-In Valve220 format, we still need to pick an axis to ensure that we can get valid texture axes that are perpendicular to the face normal.

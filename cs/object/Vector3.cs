@@ -39,30 +39,35 @@ using System;
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Add
+	//Add
 		public void Add (Vector3 other) {
 			this.x += other.x; this.y += other.y; this.z += other.z;
 		}
-		public void Add (params double[] components) {
-			switch (components.Length) {
-				case >= 3: this.x += components[0]; this.y += components[1]; this.z += components[2]; return;
-				case 2: this.x += components[0]; this.y += components[1]; return;
-				case 1: this.x += components[0]; return;
-			}
+		public void Add (double x, double y = 0, double z = 0) {
+			this.x += x; this.y += y; this.z += z;
 		}
 		public Vector3 Added (Vector3 other) {
 			return new Vector3(this.x + other.x, this.y + other.y, this.z + other.z);
 		}
-		public Vector3 Added (params double[] components) {
-			switch (components.Length) {
-				case >= 3: return new Vector3(this.x + components[0], this.y + components[1], this.z + components[2]);
-				case 2:  return new Vector3(this.x + components[0], this.y + components[1], this.z);
-				case 1:  return new Vector3(this.x + components[0], this.y, this.z);
-			}
-			return new Vector3(this.x, this.y, this.z);
+		public Vector3 Added (double x, double y = 0, double z = 0) {
+			return new Vector3(this.x + x, this.y + y, this.z + z);
 		}
 
-	//Sum
+	//Subtract
+		public void Subtract (Vector3 other) {
+			this.x -= other.x; this.y -= other.y; this.z -= other.z;
+		}
+		public void Subtract (double x, double y = 0, double z = 0) {
+			this.x -= x; this.y -= y; this.z -= z;
+		}
+		public Vector3 Subtracted (Vector3 other) {
+			return new Vector3(this.x - other.x, this.y - other.y, this.z - other.z);
+		}
+		public Vector3 Subtracted (double x, double y = 0, double z = 0) {
+			return new Vector3(this.x - x, this.y - y, this.z - z);
+		}
+
+	//Combine
 		public static Vector3 Combine (params Vector3[] vectors) {
 			for (int i = 1; i < vectors.Length; i++) vectors[0].Add(vectors[i]);
 			return vectors[0];
@@ -79,13 +84,8 @@ using System;
 		public void Scale (Vector3 other) {
 			this.x += other.x; this.y += other.y; this.z += other.z;
 		}
-		public void Scale (params double[] components) {
-			switch (components.Length) {
-				case >= 3: this.x *= components[0]; this.y *= components[1]; this.z *= components[2]; return;
-				case 2: this.x *= components[0]; this.y *= components[1]; return;
-				case 1: this.x *= components[0]; return;
-			}
-			return;
+		public void Scale (double x, double y = 1, double z = 1) {
+			this.x *= x; this.y *= y; this.z *= z;
 		}
 
 		public Vector3 Scaled (double scaleFactor) {
@@ -98,13 +98,8 @@ using System;
 		public Vector3 Scaled (Vector3 other) {
 			return new Vector3(this.x * other.x, this.y * other.y, this.z * other.z);
 		}
-		public Vector3 Scaled (params double[] components) {
-			switch (components.Length) {
-				case >= 3: return new Vector3(this.x * components[0], this.y * components[1], this.z * components[2]);
-				case 2: return new Vector3(this.x * components[0], this.y * components[1], this.z);
-				case 1: return new Vector3(this.x * components[0], this.y, this.z);
-			}
-			return new Vector3(this.x, this.y, this.z);
+		public Vector3 Scaled (double x, double y = 1, double z = 1) {
+			return new Vector3(this.x * x, this.y * y, this.z * z);
 		}
 
 	//Invert

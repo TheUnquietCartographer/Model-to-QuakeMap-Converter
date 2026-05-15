@@ -8,15 +8,18 @@ namespace Extract {
 		public static readonly ByteData
 			byteData_byteOffset_pixels = new ByteData(10, 4, true),
 			byteData_pixelWidth = new ByteData(18, 4, true),
-			byteData_pixelHeight = new ByteData(22, 4, true),
+			byteData_pixelHeight = new ByteData(22, 4, true),		//<== If this is a positive number, pixels are recorded bottom-up. I think in the UniversalImage we will record it top-down, so we will need to pay attention to this.
 			byteData_bitsPerPixel = new ByteData(28, 2, true)
 		;
+
 		public static uint BytesPerRow (uint _pixelWidth, uint _bitsPerPixel) {
 			return (_pixelWidth * _bitsPerPixel + 7) / 8;
 		}
+
 		public static uint BytesPerRow_Padded (uint _pixelWidth, uint _bitsPerPixel) {
 			return (BytesPerRow(_pixelWidth, _bitsPerPixel) + 3) & ~3u;
 		}
+
 		public static bool TryGetWidthHeight (Input_Binary _input, out uint width, out uint height) {
 			if (_input.binaryReader == null) {
 				Log.Multi(
@@ -28,7 +31,8 @@ namespace Extract {
 			}
 			WidthHeight(_input.fileStream!, _input.binaryReader!, out width, out height);
 			return true;
-		} 
+		}
+		 
 		public static void WidthHeight (FileStream _fs, BinaryReader _br, out uint width, out uint height) {
 			_fs.Seek(BMP.byteData_pixelWidth.index, SeekOrigin.Begin);
 			width = _br.ReadUInt32();

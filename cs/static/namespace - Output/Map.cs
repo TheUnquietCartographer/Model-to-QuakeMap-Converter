@@ -12,6 +12,7 @@ namespace Output {
 		}
 
 		public static string Output (
+			Input _input,
 			UniversalMesh _mesh,
 			double scaleFactor,
 			double rounding,
@@ -20,8 +21,7 @@ namespace Output {
 			bool invertFaceNormals,
 			bool trianglifyFaces,
 			bool swapYZCoordinates,
-			Format format,
-			string q2TextureDirectory = ""
+			Format format
 		) {
 		//SCALE MESH VERTICES
 			UniversalMesh scaledMesh = _mesh.Scaled(scaleFactor, rounding, swapYZCoordinates);	
@@ -37,7 +37,7 @@ namespace Output {
 			string GetTexturePath(UniversalMesh.Face _face) {
 				string textureName = scaledMesh.materials[_face.materialIndices[0]];
 				textureName = textureName.Substring(0, textureName.IndexOf('.'));
-				if (format == Format.Q2) return $"{q2TextureDirectory}/{textureName}";
+				if (format == Format.Q2) return $"{_input.filename}/{textureName}";
 				return textureName;
 			}
 
@@ -48,13 +48,11 @@ namespace Output {
 			switch (format) {
 				default:
 				case Format.Q1:
-					output += $"\t\"wad\" \"{q2TextureDirectory.Trim('/')}.wad\"\r\n";
-					q2TextureDirectory = "";
+					output += $"\t\"wad\" \"{_input.filename.Trim('/')}.wad\"\r\n";
 					break;
 				case Format.Valve220:
 					output += $"\t\"mapversion\" \"220\"\r\n";
-					output += $"\t\"wad\" \"{q2TextureDirectory.Trim('/')}.wad\"\r\n";
-					q2TextureDirectory = "";
+					output += $"\t\"wad\" \"{_input.filename.Trim('/')}.wad\"\r\n";
 					break;
 				case Format.Q2:
 					break;

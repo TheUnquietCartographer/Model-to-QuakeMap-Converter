@@ -5,18 +5,18 @@ namespace CollectionExtensions {
 
 	public static class CollectionExtensions {
 
-			public static bool Contains_OutIndex<T> (this IEnumerable<T> collection, T value, out int index) {
-				int i = -1;
-				foreach (T t in collection) {
-					i++;
-					if (t.Equals(value)) {
-						index = i;
-						return true;
-					}
+		public static bool Contains_OutIndex<T> (this IEnumerable<T> collection, T value, out int index) {
+			int i = -1;
+			foreach (T t in collection) {
+				i++;
+				if (EqualityComparer<T>.Default.Equals(t, value)) {
+					index = i;
+					return true;
 				}
-				index = -1;
-				return false;
 			}
+			index = -1;
+			return false;
+		}
 
 		public static string Stringify<T> (this IEnumerable<T>? collection, string separator = ", ") {
 			if (collection is null) return "NULL";

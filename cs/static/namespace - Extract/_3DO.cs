@@ -223,7 +223,8 @@ namespace Extract {
 			if (normalizeTextureVertices && materialsFound) {
 			//Get scalars (we will scale the texture coordinates by 1/textureSize to get the normalized values).
 				Vector2[] materialScalars = materials.Select((_materialName)=>{
-					_materialName = _materialName.Substring(0, _materialName.LastIndexOf('.'))+".bmp";
+					_materialName = _materialName.Substring(0, _materialName.LastIndexOf('.'))+".bmp";		//<== IDK what this is for???? All it does is replace the extension, which it may or may not have and may or may not be in uppercase.
+																											//The reason is that in .3do they mats are listed with .mat extension; we're assuming a conversion to .bmp (which we did outside of this program).
 					using (Input_Binary _bmp = new Input_Binary($"{materialDirectory}/{_materialName}")) {
 						uint x, y;
 						if (!BMP.TryGetWidthHeight(_bmp, out x, out y)) return new Vector2(1,1);

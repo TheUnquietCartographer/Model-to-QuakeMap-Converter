@@ -1,0 +1,19 @@
+C#
+
+byte | 1 byte | 8 bits
+ushort | 2 bytes | 16 bits
+int | 4 bytes | 32 bits
+float | 4 bytes | 32 bits
+double | 8 bytes | 64 bits
+
+* You can technically write a string as bytes by doing for example: "BM" == (ushort)0x4D42; "IDPO" == (int)0x4F504449; where each hex value is a single ASCII character.
+* * Take into account endianness - the characters might have to be ordered backwards.
+* BinaryWriter.Write() assumes a 4-byte/32-bit value, so if you intend your raw input to be an int it doesn't need casting, but a ushort or a byte does.
+
+MDL spec (C)
+
+char | 1 byte | 8 bits - Not to be confused with C# char, which is 2 bytes
+short | 2 bytes | 16 bits
+int | 4 bytes | 32 bits
+float | 4 bytes | 32 bits
+ubyte | 1 unsigned byte | 8 bits

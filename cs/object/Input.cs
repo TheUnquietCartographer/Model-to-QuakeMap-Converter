@@ -14,17 +14,11 @@ using System.IO;
 			get => path_;
 			set {
 			//If null assign an empty string?
-				if (value == null) {
-					path_ = "";
-				}
+				if (value == null) path_ = "";
 			//If 0-length assign an empty string
-				else if (value.Length == 0) {
-					path_ = "";
-				}
+				else if (value.Length == 0) path_ = "";
 			//Else assign value
-				else {
-					path_ = value;
-				}
+				else path_ = value;
 			}
 		}
 	//Filename
@@ -33,21 +27,13 @@ using System.IO;
 			get => filename_;
 			set {
 			//If null assign an empty string?
-				if (value == null) {
-					filename_ = "";
-				}
+				if (value == null) filename_ = "";
 			//If 0-length assign an empty string
-				else if (value.Length == 0) {
-					filename_ = "";
-				}
+				else if (value.Length == 0) filename_ = "";
 			//Else assign value
 				else {
-					if (value[0] == '/') {
-						filename_ = value.Substring(1);
-					}
-					else {
-						filename_ = value;
-					}
+					if (value[0] == '/') filename_ = value.Substring(1);
+					else filename_ = value;
 				}
 			}
 		}
@@ -57,21 +43,13 @@ using System.IO;
 			get => extension_;
 			set {
 			//If null assign an empty string?
-				if (value == null) {
-					extension_ = "";
-				}
+				if (value == null) extension_ = SetField(value);
 			//If 0-length assign an empty string
-				else if (value.Length == 0) {
-					extension_ = "";
-				}
+				else if (value.Length == 0) extension_ = "";
 			//Else assign value
 				else {
-					if (value[0] != '.') {
-						extension_ = '.'+value;
-					}
-					else {
-						extension_ = value;
-					}
+					if (value[0] != '.') extension_ = '.'+value;
+					else extension_ = value;
 				}
 			}
 		}

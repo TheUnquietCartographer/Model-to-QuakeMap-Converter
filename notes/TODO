@@ -1,6 +1,3 @@
-* Great now I fixed getting using the materials directory to scale the texture vertices but all the textures are scaled really fucking small for no reason.
-
-
 * Star Wars Jedi Knight - Extract from .JKL files instead of .3DO. Include entities in the extraction.
 
 * Export .JKL files using ZED.
@@ -9,3 +6,21 @@
 * Triangluation method - check for vertices within the bounds of the triangle.
 
 * Test Star Wars Jedi Knight exported level.
+
+
+
+* In Extract.3DO, there is some data in the face definitions you weren't sure of. That data is available in the JK specs on Massassi temple.
+* Also, line 226, weird modification to materialname for some reason.
+* * What if we change the mesh itself to accept Input for materials....... no because we would need to guarantee that the files exist.
+* * So what if we just ASSUME all material files are .BMP?????
+
+
+* Input accepts a path regardless of whether it is a full path or not, or has an extension, or not. This is a Good Thing.
+* If we change UniversalMesh to accept Input for the materials, instead of string, I'm sure it would then become easier to identify materials in other places in the code.
+* Currently the two places where this is required is in the Extract.3DO and Output.QMDL
+
+
+
+
+
+* In UniversalMesh.Condensed(), change pattern. Use a lookup dictionary as you're adding to the newWhatever list - you've already used this pattern in QMDL_UVTranslation.
